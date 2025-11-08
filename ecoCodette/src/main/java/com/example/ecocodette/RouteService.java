@@ -6,6 +6,9 @@
 
 package com.example.ecocodette;
 
+import org.springframework.stereotype.Service;
+@Service
+
 public class RouteService {
 
     public double calculateEmissions(double distance, String vehicleType){

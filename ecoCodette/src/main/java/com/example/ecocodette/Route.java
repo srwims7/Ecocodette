@@ -1,6 +1,5 @@
 /*
 - holds the data: origin, destination, distance, vehicle type, and CO₂ emissions.
-
  */
 
 package com.example.ecocodette;
