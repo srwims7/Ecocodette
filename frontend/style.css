@@ -59,24 +59,24 @@ button:hover {
   box-shadow: 0 4px 12px rgba(168, 213, 186, 0.5);
 }
 
-#results, #recommendations {
+.card {
   margin-top: 25px;
   text-align: center;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 15px;
   padding: 20px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-#totalEmission {
+#total {
   font-size: 1.7em;
   color: #3E7C59;
   margin-top: 10px;
   font-weight: 600;
 }
 
-#suggestionsList li {
+#suggestions li {
   list-style: none;
   background-color: #FFECE3;
   border-radius: 12px;
@@ -88,7 +88,7 @@ button:hover {
   transition: background 0.2s ease;
 }
 
-#suggestionsList li:hover {
+#suggestions li:hover {
   background-color: #FFD6BA;
 }
 
