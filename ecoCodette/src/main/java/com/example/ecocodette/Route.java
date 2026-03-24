@@ -1,17 +1,25 @@
-/*
-- holds the data: origin, destination, distance, vehicle type, and CO₂ emissions.
- */
-
 package com.example.ecocodette;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+
 public class Route {
+    @NotBlank(message = "Origin is required")
     private String origin;
+
+    @NotBlank(message = "Destination is required")
     private String destination;
+
+    @NotBlank(message = "Vehicle type is required")
     private String vehicleType;
+
     private double co2Emissions;
+
+    @Min(value = 0, message = "Distance must be zero or greater")
     private double distance;
 
-    public Route(){}
+    public Route() {
+    }
 
     public Route(String origin, String destination, String vehicleType, double co2Emissions, double distance) {
         this.setOrigin(origin);
@@ -20,7 +28,6 @@ public class Route {
         this.setCo2Emissions(co2Emissions);
         this.setDistance(distance);
     }
-
 
     public String getOrigin() {
         return origin;
@@ -62,7 +69,7 @@ public class Route {
         this.distance = distance;
     }
 
-
+    @Override
     public String toString() {
         return " Route: " + origin + " to " + destination + "\n" +
                 " Using: " + vehicleType + "\n" +
