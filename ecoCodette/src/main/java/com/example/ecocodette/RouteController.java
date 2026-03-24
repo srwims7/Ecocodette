@@ -1,43 +1,47 @@
-/*
-Handles API Request
-- receives requests and uses RouteService to calculate emissions.
-* needs to inherit(@autowire) route service
-- integrate the API by building the RouteController,
- which is the part that listens for requests and sends back responses.
- */
-
 package com.example.ecocodette;
 
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
-@RequestMapping("/routes")
+@RequestMapping({"/routes", "/api/routes"})
+@CrossOrigin(origins = "*")
 public class RouteController {
 
-    @Autowired// Collects the data from routeServices
-    private RouteService routeService;
+    private final RouteService routeService;
+    private final List<Route> routes = new CopyOnWriteArrayList<>();
 
-    //An arraylist that will store route memory
-    private List<Route> routes = new ArrayList<>();
+    public RouteController(RouteService routeService) {
+        this.routeService = routeService;
+    }
 
-    // Receives  the route data , calculates the route and returns the updated route
     @PostMapping
-    public Route createRoute(@RequestBody Route route) { // used to accept JSON
-        double emissions = routeService.calculateEmissions(route.getDistance(),route.getVehicleType());
+    public Route createRoute(@Valid @RequestBody Route route) {
+        double emissions = routeService.calculateEmissions(route.getDistance(), route.getVehicleType());
         route.setCo2Emissions(emissions);
         routes.add(route);
         return route;
     }
 
-    // returns all saved routes
     @GetMapping
-    public List<Route> getRoutes(){
+    public List<Route> getRoutes() {
         return routes;
     }
 
@@ -45,5 +49,54 @@ public class RouteController {
     public String test() {
         return "Controller is working!";
     }
-}
 
+    @GetMapping("/summary")
+    public Map<String, Object> getSummary() {
+        double totalEmissions = routes.stream()
+                .mapToDouble(Route::getCo2Emissions)
+                .sum();
+
+        Set<String> suggestions = new LinkedHashSet<>();
+
+        if (routes.isEmpty()) {
+            suggestions.add("Add routes to calculate CO₂ impact and get tailored suggestions.");
+        }
+
+        if (routes.stream().anyMatch(route -> !"electric".equalsIgnoreCase(route.getVehicleType()))) {
+            suggestions.add("Consider electric transport for shorter trips to reduce emissions.");
+        }
+
+        if (routes.stream().anyMatch(route -> route.getDistance() < 5)) {
+            suggestions.add("For short trips under 5 km, walking or biking can eliminate emissions.");
+        }
+
+        if (totalEmissions > 20) {
+            suggestions.add("Total emissions are high; combine errands or use public transit where possible.");
+        }
+
+        if (suggestions.isEmpty()) {
+            suggestions.add("Great job! Your current route choices are already low-emission.");
+        }
+
+        return Map.of(
+                "totalEmissionsKg", totalEmissions,
+                "suggestions", new ArrayList<>(suggestions),
+                "routesCount", routes.size()
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+        List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "message", "Invalid route payload",
+                        "errors", errors
+                ));
+    }
+}

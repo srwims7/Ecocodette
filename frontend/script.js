@@ -1,4 +1,5 @@
-// Smooth fade animation helper with easing
+const API_BASE_URL = "http://localhost:8080/api/routes";
+
 function fadeIn(element) {
   element.style.opacity = 0;
   element.style.display = "block";
@@ -10,7 +11,40 @@ function fadeIn(element) {
   }, 25);
 }
 
-// Wait until DOM ready
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status})`);
+  }
+
+  return response.json();
+}
+
+async function ensureSeedData() {
+  const routes = await fetchJson(API_BASE_URL);
+
+  if (routes.length > 0) {
+    return;
+  }
+
+  const sampleRoutes = [
+    { origin: "Home", destination: "Office", distance: 12, vehicleType: "petrol" },
+    { origin: "Office", destination: "Gym", distance: 4, vehicleType: "diesel" },
+    { origin: "Gym", destination: "Home", distance: 4, vehicleType: "electric" }
+  ];
+
+  await Promise.all(
+    sampleRoutes.map((route) =>
+      fetchJson(API_BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(route)
+      })
+    )
+  );
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("loadBtn");
   const totalText = document.getElementById("total");
@@ -19,17 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
   btn.addEventListener("click", async () => {
     btn.disabled = true;
     btn.textContent = "🌿 Calculating routes...";
-    btn.style.backgroundColor = "#FFD6C3"; // soft peach tone
+    btn.style.backgroundColor = "#FFD6C3";
     totalText.textContent = "--";
-    totalText.style.color = "#F4A896"; // subtle peach accent
+    totalText.style.color = "#F4A896";
     suggestionsList.innerHTML = "";
 
     try {
-      // Fetch from backend
-      const res = await fetch("http://localhost:8080/api/routes");
-      const data = await res.json();
+      await ensureSeedData();
 
-      // Delay for smooth visual flow
+      const data = await fetchJson(`${API_BASE_URL}/summary`);
+
       setTimeout(() => {
         totalText.textContent = data.totalEmissionsKg.toFixed(2) + " kg CO₂";
         fadeIn(totalText);
@@ -49,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         btn.textContent = "🔁 Recalculate";
-        btn.style.backgroundColor = "#F4A896"; // peach highlight
+        btn.style.backgroundColor = "#F4A896";
         btn.disabled = false;
       }, 700);
     } catch (error) {
